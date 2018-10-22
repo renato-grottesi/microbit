@@ -1,0 +1,12 @@
+{
+  "name": "microweather",
+  "version": "0.0.0",
+  "bin": "./source",
+  "private": true,
+  "description": "microweather client",
+  "author": "renato",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "microbit": "lancaster-university/microbit"
+  }
+}

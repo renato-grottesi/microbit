@@ -1,0 +1,12 @@
+{
+  "name": "bouncing-ball",
+  "version": "0.0.0",
+  "bin": "./source",
+  "private": true,
+  "description": "bouncing ball",
+  "author": "Renato",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "microbit": "lancaster-university/microbit"
+  }
+}

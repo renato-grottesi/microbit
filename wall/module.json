@@ -1,0 +1,12 @@
+{
+  "name": "wall",
+  "version": "0.0.0",
+  "bin": "./source",
+  "private": true,
+  "description": "wall of bricks",
+  "author": "renato",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "microbit": "lancaster-university/microbit"
+  }
+}
