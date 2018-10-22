@@ -5,6 +5,9 @@
 # Files for the ART/Dalvik VM
 *.dex
 
+# Vim
+*.swp
+
 # Java class files
 *.class
 
@@ -12,6 +15,9 @@
 bin/
 gen/
 out/
+yotta_modules/
+yotta_targets/
+png2h/png2h
 
 # Gradle files
 .gradle/
