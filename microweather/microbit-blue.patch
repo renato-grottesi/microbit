@@ -1,0 +1,124 @@
+diff --git a/app/build.gradle b/app/build.gradle
+index 46a74b2..374ca08 100644
+--- a/app/build.gradle
++++ b/app/build.gradle
+@@ -17,6 +17,9 @@ android {
+             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+         }
+     }
++    lintOptions {
++        abortOnError false
++    }
+ }
+ 
+ dependencies {
+diff --git a/app/src/main/java/com/bluetooth/mwoolley/microbitbledemo/ui/UartAvmActivity.java b/app/src/main/java/com/bluetooth/mwoolley/microbitbledemo/ui/UartAvmActivity.java
+index abd1fba..3fb2248 100644
+--- a/app/src/main/java/com/bluetooth/mwoolley/microbitbledemo/ui/UartAvmActivity.java
++++ b/app/src/main/java/com/bluetooth/mwoolley/microbitbledemo/ui/UartAvmActivity.java
+@@ -44,10 +44,72 @@ import com.bluetooth.mwoolley.microbitbledemo.Utility;
+ import com.bluetooth.mwoolley.microbitbledemo.bluetooth.BleAdapterService;
+ import com.bluetooth.mwoolley.microbitbledemo.bluetooth.ConnectionStatusListener;
+ 
+-import java.io.UnsupportedEncodingException;
++import java.io.*;
++import java.net.*;
++import android.os.*;
++import org.xmlpull.v1.*;
+ 
+ public class UartAvmActivity extends AppCompatActivity implements ConnectionStatusListener {
+ 
++	class DownloadFileFromURL extends AsyncTask<String, String, String> {
++		@Override protected String doInBackground(String... f_url) {
++			try {
++				URL url = new URL(f_url[0]);
++				URLConnection connection = url.openConnection();
++				connection.connect();
++				InputStream input = new BufferedInputStream(url.openStream(), 8192);
++				byte data[] = new byte[1024];
++				int count;
++				while ((count = input.read(data)) != -1) {
++					xmlStream.write(data, 0, count);
++				}
++				xmlStream.flush();
++				xmlStream.close();
++				input.close();
++			} catch (Exception e) {}
++			return null;
++		}
++
++		@Override protected void onPostExecute(String file_url) {
++			updateTemperature();
++			try {
++				String temp_msg = Float.toString(temperature) + ":";
++				byte[] ascii_bytes = temp_msg.getBytes("US-ASCII");
++				bluetooth_le_adapter.writeCharacteristic(
++						Utility.normaliseUUID(BleAdapterService.UARTSERVICE_SERVICE_UUID),
++						Utility.normaliseUUID(BleAdapterService.UART_RX_CHARACTERISTIC_UUID), ascii_bytes);
++			} catch (UnsupportedEncodingException e) {
++				e.printStackTrace();
++			}
++		}
++
++	}
++
++	public void updateTemperature(){
++        try {
++            XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
++            factory.setNamespaceAware(true);
++            XmlPullParser xpp = factory.newPullParser();
++            xpp.setInput( new StringReader(xmlStream.toString()));
++            int eventType = xpp.getEventType(); int third = 0;
++            while (eventType != XmlPullParser.END_DOCUMENT) {
++                if(eventType == XmlPullParser.START_TAG) {
++                    if( (xpp.getName().compareTo("temperature")==0) ) {
++                        temperature = Float.parseFloat(xpp.getAttributeValue(2));
++                        third++; if(third>2) break; // The third value is the current.
++                    }
++                }
++                eventType = xpp.next();
++            }
++        } catch (Exception e) { }
++    }
++
++
++
++
++    float temperature  = 0;
++    OutputStream xmlStream;
++
+     private BleAdapterService bluetooth_le_adapter;
+ 
+     private boolean exiting=false;
+@@ -89,6 +151,8 @@ public class UartAvmActivity extends AppCompatActivity implements ConnectionStat
+         // connect to the Bluetooth smart service
+         Intent gattServiceIntent = new Intent(this, BleAdapterService.class);
+         bindService(gattServiceIntent, mServiceConnection, BIND_AUTO_CREATE);
++
++				xmlStream = new ByteArrayOutputStream();
+     }
+ 
+     @Override
+@@ -205,11 +269,7 @@ public class UartAvmActivity extends AppCompatActivity implements ConnectionStat
+                             return;
+                         }
+                         Log.d(Constants.TAG, "micro:bit answer: " + ascii);
+-                        if (!ascii.equals(Constants.AVM_CORRECT_RESPONSE)) {
+-                            showAnswer(ascii);
+-                        } else {
+-                            showAnswer(ascii+" You only needed "+guess_count+" guesses!");
+-                        }
++												new DownloadFileFromURL().execute("https://api.met.no/weatherapi/locationforecast/1.9/?lat=63.4430073&lon=10.419061");
+                     }
+                     break;
+                 case BleAdapterService.MESSAGE:
+@@ -284,4 +344,4 @@ public class UartAvmActivity extends AppCompatActivity implements ConnectionStat
+         showGuessCount();
+     }
+ 
+-}
+\ No newline at end of file
++}
+diff --git a/gradlew b/gradlew
+old mode 100644
+new mode 100755
